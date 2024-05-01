@@ -1,9 +1,13 @@
 package com.simpleboard.demo.dto;
 
 import com.simpleboard.demo.entity.BoardEntity;
+import com.simpleboard.demo.entity.BoardFileEntity;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 // Data Transfer Object
 @Getter
@@ -20,6 +24,12 @@ public class BoardDTO {
     private int boardHits;
     private LocalDateTime boardCreatedTime;
     private LocalDateTime boardUpdatedTime;
+
+    private List<MultipartFile> boardFile; // save.html -> Controller 파일 담는 용도
+    private List<String> originalFileName; // 원본 파일 이름
+    private List<String> storedFileName; // 서버 저장용 파일 이름
+    private int fileAttached; // 파일 첨부 여부(첨부1, 미첨부0)
+
     // Ctrl + Enter = 자동완성
     public BoardDTO(Long id, String boardWriter, String boardTitle, int boardHits, LocalDateTime boardCreatedTime) {
         this.id = id;
@@ -39,6 +49,26 @@ public class BoardDTO {
         boardDTO.setBoardHits(boardEntity.getBoardHits());
         boardDTO.setBoardCreatedTime(boardEntity.getCreatedTime());
         boardDTO.setBoardUpdatedTime(boardEntity.getUpdatedTime());
+
+        if (boardEntity.getFileAttached() == 0) {
+            boardDTO.setFileAttached(boardEntity.getFileAttached());
+        } else {
+            List<String> originalFileNameList = new ArrayList<>();
+            List<String> storedFileNameList = new ArrayList<>();
+            boardDTO.setFileAttached(boardEntity.getFileAttached());
+            // 파일 이름을 가져가야함.
+            // originalFileName, storedFileName 정보는 [board_file_table] 에 들어있음.
+            // 아래 쿼리문이 필요함.
+            // select * from board_table b, board_file_table bf wheere b.id=bf.id and where b.id=?
+            for (BoardFileEntity boardFileEntity: boardEntity.getBoardFileEntityList()) {
+                originalFileNameList.add(boardFileEntity.getOriginalFileName());
+                storedFileNameList.add(boardFileEntity.getStoredFileName());
+            }
+            boardDTO.setOriginalFileName(originalFileNameList);
+            boardDTO.setStoredFileName(storedFileNameList);
+            // 부모 객체가 자식 객체에 접근함. jpa를 이용해서
+        }
+
         return boardDTO;
     }
 }
